@@ -14,10 +14,6 @@ const app = () => {
   )
     throw new Error('Environment variables missing!')
 
-
-  // https://github.com/apps/rmk-firmware-configurator
-  // https://github.com/apps/keymap-editor/installations/select_target
-
   const app = new App({
     appId: APP_ID, // Use environment variables for sensitive info
     privateKey: PRIVATE_KEY,

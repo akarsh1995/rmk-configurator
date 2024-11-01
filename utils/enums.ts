@@ -12,5 +12,5 @@ export enum AppUrlPath {
 
 export enum RmkEditorErrorCode {
   AUTH_ERROR = 'auth_error',
-  MISSING_INSTALLATION_CODE = 'MISSING_INSTALLATION_CODE'
+  MISSING_INSTALLATION_CODE = 'missing_installation_code'
 }

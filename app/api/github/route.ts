@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CookieKey } from "../../../utils/enums";
 import { getAccessibleRepositories } from "../../../lib/github/repository";
 import { getTheInstallationAccessToken, getUserAuthUrl } from "../../../lib/github/auth";
-import { getAppInstallationUrl } from "../../../lib/app/url";
+import { getAppInstallationUrl, getAppURL } from "../../../lib/app/url";
 
 export async function GET(request: NextRequest) {
   const oAuthCode = request.nextUrl.searchParams.get('code');
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     if (installationAuthResult?.data.repositories?.length === 0) {
       return NextResponse.redirect(await getAppInstallationUrl());
     }
-    return NextResponse.redirect(`http://localhost:3000`);
+    return NextResponse.redirect(getAppURL());
   } else if (installationToken) {
 
     const respositories = await getAccessibleRepositories(installationToken.value);

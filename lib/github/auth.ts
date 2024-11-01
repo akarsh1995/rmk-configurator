@@ -1,6 +1,8 @@
 import { setTokensCookies } from "../../utils/functions";
 import { Octokit } from "@octokit/core";
 import { app } from "./client";
+import { getAppURL } from "../app/url";
+import { AppUrlPath } from "../../utils/enums";
 
 export function getTheInstallationAccessToken(data: { userAccessToken?: string; refreshToken?: string; installationId?: string; code?: { oAuthCode: string; oAuthState: string; } }) {
   if (data.userAccessToken) {
@@ -70,5 +72,5 @@ export async function getInstallationTokenByCodeAndState(
 
 
 export function getUserAuthUrl() {
-  return app().oauth.getWebFlowAuthorizationUrl({ redirectUrl: 'http://localhost:3000/api/github' }).url
+  return app().oauth.getWebFlowAuthorizationUrl({ redirectUrl: getAppURL(AppUrlPath.GH_AUTH) }).url
 }
