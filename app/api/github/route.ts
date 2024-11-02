@@ -1,8 +1,7 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { CookieKey, RmkEditorErrorCode } from "../../../utils/enums";
-import { getAccessibleRepositories } from "../../../lib/github/repository";
-import { createUserAccessToken, getInstallationTokenByInstallationId, getInstallationTokenByKit, getTheInstallationAccessToken, getUserAuthUrl } from "../../../lib/github/auth";
+import { createUserAccessToken, getInstallationTokenByInstallationId, getInstallationTokenByKit, getUserAuthUrl } from "../../../lib/github/auth";
 import { getAppInstallationUrl, getAppURL } from "../../../lib/app/url";
 import RmkFwEditorError from "../../../lib/error";
 import { app } from "../../../lib/github/client";
@@ -20,8 +19,6 @@ export async function GET(request: NextRequest) {
   const userAccessToken = cookieStore.get(CookieKey.GITHUB_USER_ACCESS_TOKEN);
   const userRefreshToken = cookieStore.get(CookieKey.GITHUB_USER_REFRESH_TOKEN);
 
-  const isCallback = installationId || oAuthCode
-
   let installationKit;
 
   if (installationToken) {
@@ -29,7 +26,7 @@ export async function GET(request: NextRequest) {
       await app().oauth.checkToken({ token: installationToken.value });
       return NextResponse.redirect(getAppURL());
     } catch (e) {
-      console.error(`Installation token invalid deleting stale token`);
+      console.info(`Installation token invalid deleting stale token`, e);
       cookieStore.delete(CookieKey.GITHUB_INSTALLATION_TOKEN);
     }
   }
@@ -39,6 +36,7 @@ export async function GET(request: NextRequest) {
     try {
       installationKit = await getInstallationTokenByInstallationId({ installationId: parseInt(installationId) })
     } catch (e) {
+      console.error(`Could not get installation token even after app installation`, e);
       return NextResponse.json({ error: new RmkFwEditorError(RmkEditorErrorCode.AUTH_ERROR) }, { status: 422 });
     }
   } else if (userRefreshToken || userAccessToken || oAuthCode) {
@@ -59,7 +57,7 @@ export async function GET(request: NextRequest) {
         await setTokensCookies({ accessToken: { token: refreshToken.authentication.token, expires: refreshToken.authentication.expiresAt } });
         userAccessKit = await app().oauth.getUserOctokit({ 'token': refreshToken.authentication.token });
       } catch (e) {
-        console.error(`Failed to get user access kit using refresh token`);
+        console.info(`Failed to get user access kit using refresh token. trying to reauthorize`, e);
         return NextResponse.redirect(getUserAuthUrl());
       }
     }
@@ -70,6 +68,7 @@ export async function GET(request: NextRequest) {
         const token = await createUserAccessToken({ code: oAuthCode, state: oAuthState })
         userAccessKit = await app().oauth.getUserOctokit({ token: token.authentication.token });
       } catch (e) {
+        console.error(`could not verify user using oAuthCode and oAuthState`, e)
         return NextResponse.json({ error: new RmkFwEditorError(RmkEditorErrorCode.AUTH_ERROR) }, { status: 422 });
       }
     }
@@ -78,7 +77,7 @@ export async function GET(request: NextRequest) {
       try {
         installationKit = await getInstallationTokenByKit(userAccessKit);
       } catch (e) {
-        console.error(`Failed to fetch installation kit looks like the app is not installed redirecting to install the app`)
+        console.info(`Failed to fetch installation kit looks like the app is not installed redirecting to install the app`, e)
         return NextResponse.redirect(await getAppInstallationUrl());
       }
     }

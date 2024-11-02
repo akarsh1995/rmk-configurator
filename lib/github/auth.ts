@@ -2,8 +2,7 @@ import { setTokensCookies } from "../../utils/functions";
 import { Octokit } from "@octokit/core";
 import { app } from "./client";
 import { getAppURL } from "../app/url";
-import { AppUrlPath, RmkEditorErrorCode } from "../../utils/enums";
-import RmkFwEditorError from "../error";
+import { AppUrlPath } from "../../utils/enums";
 
 export function getTheInstallationAccessToken(data: { userAccessToken?: string; refreshToken?: string; installationId?: string; code?: { oAuthCode: string; oAuthState: string; } }) {
   if (data.userAccessToken) {
