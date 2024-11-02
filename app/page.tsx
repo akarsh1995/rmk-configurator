@@ -89,6 +89,24 @@ export default function Home() {
     <div>
       {repos.length && <Select options={options} value={selectedOption} onChange={setSelectedOption} />}
       <div>{authUrl && <a href={authUrl}>github connect</a>}</div>
+      <br/>
+      {repos.length && <button onClick={async () => {
+        const configContentUrl = getAppURL(AppUrlPath.GH_CONFIG_CONTENT)
+        const [owner, repo] = selectedOption.split('/');
+
+        const body = JSON.stringify({
+            keyboardToml: toml,
+            vialJson: vial,
+        });
+
+        const response = await fetch(`${configContentUrl}?owner=${owner}&repo=${repo}`, {
+          method: 'POST', // Specify the request method
+          headers: {
+            'Content-Type': 'application/json' // Set the headers, especially if sending JSON
+          },
+          body  // Convert the data to a JSON string
+        });
+      }}>Save Config</button>}
       <h2>Edit your keyboard.toml</h2>
       <JsonEditor data={vial} setData={setVial} />
       <h2>Edit your vial.json</h2>

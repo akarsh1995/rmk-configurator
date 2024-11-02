@@ -17,3 +17,8 @@ export enum RmkEditorErrorCode {
   MISSING_CONFIG_FILES = 'missing_config_files',
   MISSING_QUERY_PARAMS = "MISSING_QUERY_PARAMS"
 }
+
+export enum RmkFilePaths {
+  KEYBOARD_TOML = 'keyboard.toml',
+  VIAL_JSON = 'vial.json'
+}

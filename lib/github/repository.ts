@@ -1,4 +1,5 @@
 import { Octokit } from "octokit";
+import { RmkFilePaths } from "../../utils/enums";
 
 async function getFileContent({ owner, repo, path, ref = 'main', authToken }: { owner: string; repo: string; path: string; ref: string; authToken: string; }) {
   const octokit = new Octokit({ auth: authToken });
@@ -53,70 +54,81 @@ export async function getVialJson({ owner, repo, ref = 'main', authToken }: { ow
 }
 
 
-// await commitFileToRepo({ owner: 'akarsh1995', repo: 'rmk-editor', branch: 'main', path: 'keyboard.toml', content: 'this is toml content', message: 'initial commit', appInstallationId: 123456 });
-//     return NextResponse.json(
-//       { data: 'success' },
-//       { status: 200 },
-//     );
+export async function commitMultipleFilesToRepo({
+  owner,
+  repo,
+  branch = 'main',
+  files, // Array of file objects with { path, content }
+  message,
+  authToken,
+}: {
+  owner: string;
+  repo: string;
+  branch?: string;
+  files: { path: RmkFilePaths; content: string }[];
+  message: string;
+  authToken: string;
+}) {
+  try {
+    const octokit = new Octokit({ auth: authToken });
 
+    // Step 1: Get the latest commit on the branch
+    const { data: refData } = await octokit.request(
+      'GET /repos/{owner}/{repo}/git/ref/heads/{branch}',
+      { owner, repo, branch }
+    );
+    const latestCommitSha = refData.object.sha;
 
+    // Step 2: Get the commit data to retrieve the tree SHA
+    const { data: commitData } = await octokit.request(
+      'GET /repos/{owner}/{repo}/git/commits/{commit_sha}',
+      { owner, repo, commit_sha: latestCommitSha }
+    );
+    const baseTreeSha = commitData.tree.sha;
 
+    // Step 3: Create blobs for each file
+    const blobs = await Promise.all(
+      files.map(async (file): Promise<{ path: string; mode: "100644" | "100755" | "040000" | "160000" | "120000"; type: "blob" | "tree" | "commit"; sha: string; }> => {
+        const { data: blobData } = await octokit.request(
+          'POST /repos/{owner}/{repo}/git/blobs',
+          {
+            owner,
+            repo,
+            content: Buffer.from(file.content).toString('base64'),
+            encoding: 'base64',
+          }
+        );
+        return { path: file.path, mode: '100644', type: 'blob', sha: blobData.sha };
+      })
+    );
 
-// async function commitFileToRepo(
-// { owner, repo, branch, path, content, message, appInstallationId }: { owner: string; repo: string; branch: string; path: string; content: string; message: string; appInstallationId: number;}) {
-//   try {
-//     // Step 1: Get the latest commit on the branch
+    // Step 4: Create a new tree with all blobs
+    const { data: newTree } = await octokit.request(
+      'POST /repos/{owner}/{repo}/git/trees',
+      {
+        owner,
+        repo,
+        tree: blobs,
+        base_tree: baseTreeSha,
+      }
+    );
 
-//     const octokit = await app.getInstallationOctokit(appInstallationId);
+    // Step 5: Create a new commit with the new tree
+    const { data: newCommit } = await octokit.request(
+      'POST /repos/{owner}/{repo}/git/commits',
+      { owner, repo, message, tree: newTree.sha, parents: [latestCommitSha] }
+    );
 
-//     const { data: refData } = await octokit.request(
-//       'GET /repos/{owner}/{repo}/git/ref/heads/{branch}',
-//       { owner, repo, branch }
-//     );
+    // Step 6: Update the branch reference to point to the new commit
+    await octokit.request('PATCH /repos/{owner}/{repo}/git/refs/heads/{branch}', {
+      owner,
+      repo,
+      branch,
+      sha: newCommit.sha,
+    });
 
-//     const latestCommitSha = refData.object.sha;
-
-//     // Step 2: Get the commit data to retrieve the tree SHA
-//     const { data: commitData } = await octokit.request(
-//       'GET /repos/{owner}/{repo}/git/commits/{commit_sha}',
-//       { owner, repo, commit_sha: latestCommitSha }
-//     );
-
-//     const baseTreeSha = commitData.tree.sha;
-
-//     // Step 3: Create a new blob with the file content
-//     const { data: blobData } = await octokit.request(
-//       'POST /repos/{owner}/{repo}/git/blobs',
-//       { owner, repo, content: Buffer.from(content).toString('base64'), encoding: 'base64' }
-//     );
-
-//     // Step 4: Create a new tree with the blob based on the base tree
-//     const { data: newTree } = await octokit.request(
-//       'POST /repos/{owner}/{repo}/git/trees',
-//       {
-//         owner,
-//         repo,
-//         tree: [{ path, mode: '100644', type: 'blob', sha: blobData.sha }],
-//         base_tree: baseTreeSha,
-//       }
-//     );
-
-//     // Step 5: Create a new commit with the new tree
-//     const { data: newCommit } = await octokit.request(
-//       'POST /repos/{owner}/{repo}/git/commits',
-//       { owner, repo, message, tree: newTree.sha, parents: [latestCommitSha] }
-//     );
-
-//     // Step 6: Update the branch reference to point to the new commit
-//     await octokit.request('PATCH /repos/{owner}/{repo}/git/refs/heads/{branch}', {
-//       owner,
-//       repo,
-//       branch,
-//       sha: newCommit.sha,
-//     });
-
-//     console.log('Commit created successfully:', newCommit.sha);
-//   } catch (error) {
-//     console.error('Error committing file:', error);
-//   }
-// }
+    console.log('Commit created successfully:', newCommit.sha);
+  } catch (error) {
+    console.error('Error committing files:', error);
+  }
+}
