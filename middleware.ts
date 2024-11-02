@@ -1,14 +1,11 @@
 // middleware.ts
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 import { cookies } from "next/headers";
-import { AppUrlPath, CookieKey, RmkEditorErrorCode } from "./utils/enums";
-import { setTokensCookies } from "./utils/functions";
-import { getAppURL } from "./lib/app/url";
 import RmkFwEditorError from "./lib/error";
 import { EmptyData, IApiResponse } from "./interfaces/IApiResponse";
+import { CookieKey, RmkEditorErrorCode } from "./utils/enums";
 
-export async function middleware(request: NextRequest) {
+export async function middleware() {
   const cookieStore = await cookies();
 
   const installationToken = cookieStore.get(CookieKey.GITHUB_INSTALLATION_TOKEN);

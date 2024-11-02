@@ -106,6 +106,7 @@ export default function Home() {
           },
           body  // Convert the data to a JSON string
         });
+        console.log(response);
       }}>Save Config</button>}
       <h2>Edit your keyboard.toml</h2>
       <JsonEditor data={vial} setData={setVial} />
