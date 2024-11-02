@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@next/env": "^15.0.2",
-    "cookies-next": "^4.3.0",
     "json-edit-react": "^1.17.1",
     "next": "15.0.2",
     "octokit": "^4.0.2",

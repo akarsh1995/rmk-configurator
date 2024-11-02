@@ -2,8 +2,13 @@
 import { useEffect, useState } from "react";
 import { AppUrlPath, RmkEditorErrorCode } from "../utils/enums";
 import { getAppURL } from "../lib/app/url";
-import { JsonEditor } from 'json-edit-react'
 import { IApiResponse } from "../interfaces/IApiResponse";
+import dynamic from 'next/dynamic'
+
+
+// Dynamically import the component
+const JsonEditor = dynamic(() => import('../components/editor'), {ssr: false});
+
 
 type SelectOption = {
   label: string;
@@ -56,6 +61,7 @@ export default function Home() {
       setSelectedOption(`${r.owner}/${r.name}`)
     }
   }
+
 
   useEffect(() => {
     fetchRepositories()
