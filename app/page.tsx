@@ -1,9 +1,9 @@
 'use client'
 import { useEffect, useState } from "react";
+import dynamic from 'next/dynamic'
 import { AppUrlPath, RmkEditorErrorCode } from "../utils/enums";
 import { getAppURL } from "../lib/app/url";
 import { IApiResponse } from "../interfaces/IApiResponse";
-import dynamic from 'next/dynamic'
 
 
 // Dynamically import the component
