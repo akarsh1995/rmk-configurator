@@ -23,5 +23,5 @@ export async function middleware(request: NextRequest) {
 
 // Optional: Apply middleware only to protected paths
 export const config = {
-  matcher: ['/api/github/repository'], // Only runs on dashboard and profile routes
+  matcher: ['/api/github/repository/:path*'], // Only runs on dashboard and profile routes
 };

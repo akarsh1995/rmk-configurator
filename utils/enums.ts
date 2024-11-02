@@ -7,10 +7,13 @@ export enum CookieKey {
 
 export enum AppUrlPath {
   GH_AUTH = '/api/github',
-  GH_REPO = '/api/github/repository'
+  GH_REPO = '/api/github/repository/accessibleRepository',
+  GH_CONFIG_CONTENT = '/api/github/repository/configContent',
 }
 
 export enum RmkEditorErrorCode {
   AUTH_ERROR = 'auth_error',
-  MISSING_INSTALLATION_CODE = 'missing_installation_code'
+  MISSING_INSTALLATION_CODE = 'missing_installation_code',
+  MISSING_CONFIG_FILES = 'missing_config_files',
+  MISSING_QUERY_PARAMS = "MISSING_QUERY_PARAMS"
 }
