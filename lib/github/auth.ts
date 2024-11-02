@@ -59,13 +59,14 @@ export async function getInstallationTokenByCodeAndState(
   data: { code: string; state: string; }
 ) {
   const token = await app().oauth.createToken(data);
-  token.authentication.refreshToken && token.authentication.expiresAt && token.authentication.refreshTokenExpiresAt && await setTokensCookies(
-    {
-      accessToken: { token: token.authentication.token, expires: token.authentication.expiresAt },
-      refreshToken: { token: token.authentication.refreshToken, expires: token.authentication.refreshTokenExpiresAt },
-    }
-  );
-
+  if (token.authentication.refreshToken && token.authentication.expiresAt && token.authentication.refreshTokenExpiresAt) {
+    await setTokensCookies(
+      {
+        accessToken: { token: token.authentication.token, expires: token.authentication.expiresAt },
+        refreshToken: { token: token.authentication.refreshToken, expires: token.authentication.refreshTokenExpiresAt },
+      }
+    );
+  }
   const kit = await app().oauth.getUserOctokit({ token: token.authentication.token });
   return getInstallationTokenByKit(kit);
 }
