@@ -1,7 +1,7 @@
 import { RmkEditorErrorCode } from "../utils/enums";
 
 class RmkFwEditorError extends Error {
-  code: string;
+  code: RmkEditorErrorCode;
 
   /**
    *

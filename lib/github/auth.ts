@@ -2,7 +2,8 @@ import { setTokensCookies } from "../../utils/functions";
 import { Octokit } from "@octokit/core";
 import { app } from "./client";
 import { getAppURL } from "../app/url";
-import { AppUrlPath } from "../../utils/enums";
+import { AppUrlPath, RmkEditorErrorCode } from "../../utils/enums";
+import RmkFwEditorError from "../error";
 
 export function getTheInstallationAccessToken(data: { userAccessToken?: string; refreshToken?: string; installationId?: string; code?: { oAuthCode: string; oAuthState: string; } }) {
   if (data.userAccessToken) {
@@ -20,7 +21,7 @@ export function getTheInstallationAccessToken(data: { userAccessToken?: string; 
 
 export async function getInstallationTokenByUserAccessToken(data: { userAccessToken: string; }) {
   const kit = await app().oauth.getUserOctokit({ 'token': data.userAccessToken });
-  return await getInstallationTokenByKit(kit);
+  return getInstallationTokenByKit(kit);
 }
 
 export async function getInstallationTokenByKit(kit: Octokit) {
@@ -69,6 +70,20 @@ export async function getInstallationTokenByCodeAndState(
   }
   const kit = await app().oauth.getUserOctokit({ token: token.authentication.token });
   return getInstallationTokenByKit(kit);
+}
+
+
+export async function createUserAccessToken(data: { code: string; state: string; }) {
+  const token = await app().oauth.createToken(data);
+  if (token.authentication.refreshToken && token.authentication.expiresAt && token.authentication.refreshTokenExpiresAt) {
+    await setTokensCookies(
+      {
+        accessToken: { token: token.authentication.token, expires: token.authentication.expiresAt },
+        refreshToken: { token: token.authentication.refreshToken, expires: token.authentication.refreshTokenExpiresAt },
+      }
+    );
+  }
+  return token;
 }
 
 
