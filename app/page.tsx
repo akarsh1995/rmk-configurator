@@ -1,52 +1,26 @@
 'use client';
-import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { AppUrlPath, RmkEditorErrorCode } from '../utils/enums';
 import { getAppURL } from '../lib/app/url';
 import { IApiResponse } from '../interfaces/IApiResponse';
+import { allRmkKeyboardConfigs } from '@/lib/config/allKeyboards';
+import { useKeyboardConfigStore } from '@/store/keyboardConfigStore';
+import { Select } from '@/components/reactTags';
+import { IKeyboardTomlConfig } from '@/interfaces/IKeyboardConfig';
+import { IVialJSONConfig } from '@/interfaces/IVialConfig';
+import { useRouter } from 'next/navigation';
+import { useGithubStore } from '@/store/githubStore';
+import { useEffect } from 'react';
 
 // Dynamically import the component
 const JsonEditor = dynamic(() => import('../components/editor'), {
   ssr: false,
 });
 
-type SelectOption = {
-  label: string;
-  value: string;
-};
-
-type SelectProps = {
-  options: SelectOption[];
-  value: string;
-  onChange: (value: string) => void;
-};
-
-const Select: React.FC<SelectProps> = ({ options, value, onChange }) => {
-  return (
-    <select value={value} onChange={(e) => onChange(e.target.value)}>
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
-  );
-};
-
 export default function Home() {
-  const [authUrl, setAuthUrl] = useState<string>();
-  const [repos, setRepos] = useState<{ name: string; owner: string }[]>([]);
-
-  const options = repos.map((r) => ({
-    label: `${r.owner}/${r.name}`,
-    value: `${r.owner}/${r.name}`,
-  }));
-
-  const [toml, setToml] = useState({});
-  const [vial, setVial] = useState({});
-  const [selectedOption, setSelectedOption] = useState<string>(
-    options.length ? options[0].value : ''
-  );
+  const router = useRouter();
+  const keyboardConfigStore = useKeyboardConfigStore();
+  const githubStore = useGithubStore();
 
   const fetchRepositories = async () => {
     const url = getAppURL(AppUrlPath.GH_REPO);
@@ -58,11 +32,34 @@ export default function Home() {
       'error' in jsonObj &&
       jsonObj.error.code === RmkEditorErrorCode.MISSING_INSTALLATION_CODE
     ) {
-      setAuthUrl(getAppURL(AppUrlPath.GH_AUTH));
+      router.push(AppUrlPath.GH_AUTH);
     } else if ('data' in jsonObj && jsonObj.data.length) {
-      setRepos(jsonObj.data);
-      const r = jsonObj.data[0];
-      setSelectedOption(`${r.owner}/${r.name}`);
+      const r = jsonObj.data;
+      githubStore.setRepositories(r);
+    }
+  };
+
+  const getConfigContent = async () => {
+    const configContentUrl = getAppURL(AppUrlPath.GH_CONFIG_CONTENT);
+    if (githubStore.owner && githubStore.name) {
+      const results = await fetch(
+        `${configContentUrl}?owner=${githubStore.owner}&repo=${githubStore.name}`
+      );
+      const jsonObj: IApiResponse<{ keyboardToml: object; vialJson: object }> =
+        await results.json();
+
+      if ('error' in jsonObj) {
+        console.log(jsonObj);
+      } else if ('data' in jsonObj) {
+        const parsedKeyboardToml = jsonObj.data
+          .keyboardToml as IKeyboardTomlConfig;
+        const parsedVialJson = jsonObj.data.vialJson as IVialJSONConfig;
+        keyboardConfigStore.updateExistingConfig({
+          toml: parsedKeyboardToml,
+          vial: parsedVialJson,
+          configKey: 'user',
+        });
+      }
     }
   };
 
@@ -70,58 +67,57 @@ export default function Home() {
     fetchRepositories();
   }, []);
 
-  const getConfigContent = async () => {
-    const configContentUrl = getAppURL(AppUrlPath.GH_CONFIG_CONTENT);
-    const [owner, repo] = selectedOption.split('/');
-    if (owner && repo) {
-      const results = await fetch(
-        `${configContentUrl}?owner=${owner}&repo=${repo}`
-      );
-      const jsonObj: IApiResponse<{ keyboardToml: object; vialJson: object }> =
-        await results.json();
-
-      if (
-        'error' in jsonObj &&
-        jsonObj.error.code === RmkEditorErrorCode.MISSING_CONFIG_FILES
-      ) {
-        console.log(jsonObj);
-      } else if ('data' in jsonObj) {
-        const parsedKeyboardToml = jsonObj.data.keyboardToml;
-        const parsedVialJson = jsonObj.data.vialJson;
-        setToml(parsedKeyboardToml);
-        setVial(parsedVialJson);
-      }
-    }
-  };
-
   useEffect(() => {
     getConfigContent();
-  }, [repos, selectedOption]);
+  }, [githubStore.allRepositories, githubStore.name]);
 
   return (
     <div>
-      {repos.length && (
+      {githubStore.allRepositories.length && (
         <Select
-          options={options}
-          value={selectedOption}
-          onChange={setSelectedOption}
+          options={githubStore.allRepositories.map((repo, i) => ({
+            label: `${repo.owner}/${repo.name}`,
+            value: i.toString(),
+          }))}
+          value={'0'}
+          onChange={(i: string) => githubStore.selectRepository(parseInt(i))}
         />
       )}
-      <div>{authUrl && <a href={authUrl}>github connect</a>}</div>
+
+      <div>
+        {keyboardConfigStore.toml && keyboardConfigStore.vial && (
+          <Select
+            options={keyboardConfigStore.allConfigs.map((config) => ({
+              label: config,
+              value: config,
+            }))}
+            value={keyboardConfigStore.configKey}
+            onChange={(configKey) => {
+              if (configKey === 'user') {
+                getConfigContent();
+              } else {
+                keyboardConfigStore.updateExistingConfig({
+                  configKey,
+                  vial: allRmkKeyboardConfigs[configKey].vialJson,
+                  toml: allRmkKeyboardConfigs[configKey].keyboardToml,
+                });
+              }
+            }}
+          />
+        )}
+      </div>
       <br />
-      {repos.length && (
+      {githubStore.allRepositories.length && (
         <button
           onClick={async () => {
             const configContentUrl = getAppURL(AppUrlPath.GH_CONFIG_CONTENT);
-            const [owner, repo] = selectedOption.split('/');
-
             const body = JSON.stringify({
-              keyboardToml: toml,
-              vialJson: vial,
+              keyboardToml: keyboardConfigStore.toml,
+              vialJson: keyboardConfigStore.toml,
             });
 
             const response = await fetch(
-              `${configContentUrl}?owner=${owner}&repo=${repo}`,
+              `${configContentUrl}?owner=${githubStore.owner}&repo=${githubStore.name}`,
               {
                 method: 'POST', // Specify the request method
                 headers: {
@@ -137,9 +133,28 @@ export default function Home() {
         </button>
       )}
       <h2>Edit your keyboard.toml</h2>
-      <JsonEditor data={vial} setData={setVial} />
+      {keyboardConfigStore.toml && (
+        <JsonEditor
+          data={keyboardConfigStore.toml}
+          setData={(data) => {
+            keyboardConfigStore.updateExistingConfig({
+              toml: data as IKeyboardTomlConfig,
+            });
+          }}
+        />
+      )}
+
       <h2>Edit your vial.json</h2>
-      <JsonEditor data={toml} setData={setToml} />
+      {keyboardConfigStore.vial && (
+        <JsonEditor
+          data={keyboardConfigStore.vial}
+          setData={(data) =>
+            keyboardConfigStore.updateExistingConfig({
+              vial: data as IVialJSONConfig,
+            })
+          }
+        />
+      )}
     </div>
   );
 }
