@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint --fix"
+    "lint": "next lint --fix",
+    "prepare": "husky"
   },
   "dependencies": {
     "@next/env": "^15.0.2",
@@ -19,6 +20,7 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
+    "@next/eslint-plugin-next": "^15.0.2",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
