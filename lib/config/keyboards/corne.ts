@@ -1,6 +1,13 @@
 import { IKeyboardTomlConfig } from '@/interfaces/IKeyboardConfig';
 import { IRmkConfig } from '@/interfaces/IRmkConfig';
 import { IVialJSONConfig } from '@/interfaces/IVialConfig';
+import {
+  RmkKeyboardTypes,
+  RmkMcuFamily,
+  RmkMcus,
+  RmkConnectionTypes,
+  RmkRustCompilationTargets,
+} from '@/utils/enums';
 
 const keyboardToml: IKeyboardTomlConfig = {
   ble: {
@@ -15,6 +22,9 @@ const keyboardToml: IKeyboardTomlConfig = {
     vendor_id: 19531,
   },
   layout: {
+    cols: 6,
+    layers: 3,
+    rows: 8,
     keymap: [
       [
         ['_', '_', '_', '_', '_', '_'],
@@ -49,13 +59,6 @@ const keyboardToml: IKeyboardTomlConfig = {
     ],
   },
   light: {},
-  matrix: {
-    cols: 6,
-    input_pins: [],
-    layers: 3,
-    output_pins: [],
-    rows: 8,
-  },
   split: {
     connection: 'ble',
     peripheral: [
@@ -314,6 +317,11 @@ const vialJson: IVialJSONConfig = {
 const rmkConfigCorne: IRmkConfig = {
   keyboardToml: keyboardToml,
   vialJson: vialJson,
+  keyboard_type: RmkKeyboardTypes.split,
+  microcontroller_family: RmkMcuFamily.nrf,
+  split_microcontroller: RmkMcus.nrf52840,
+  connection: RmkConnectionTypes.BLE,
+  target: RmkRustCompilationTargets['ARM Cortex-M4F'],
 };
 
 export default rmkConfigCorne;

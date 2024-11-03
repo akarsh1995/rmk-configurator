@@ -69,7 +69,7 @@ export async function getKeyboardToml({
   return getFileContent({
     owner,
     repo,
-    path: 'keyboard.toml',
+    path: RmkFilePaths.KEYBOARD_TOML,
     ref,
     authToken,
   });
@@ -89,7 +89,27 @@ export async function getVialJson({
   return getFileContent({
     owner,
     repo,
-    path: 'vial.json',
+    path: RmkFilePaths.VIAL_JSON,
+    ref,
+    authToken,
+  });
+}
+
+export async function getTemplateConfig({
+  owner,
+  repo,
+  ref = 'main',
+  authToken,
+}: {
+  owner: string;
+  repo: string;
+  ref: string;
+  authToken: string;
+}) {
+  return getFileContent({
+    owner,
+    repo,
+    path: RmkFilePaths.TEMPLATE_CONFIG,
     ref,
     authToken,
   });

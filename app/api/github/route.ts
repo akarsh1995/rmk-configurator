@@ -56,8 +56,30 @@ export async function GET(request: NextRequest) {
     }
   } else if (userRefreshToken || userAccessToken || oAuthCode) {
     let userAccessKit;
+    if (oAuthCode && oAuthState) {
+      // user is authenticated successfully
+      try {
+        const token = await createUserAccessToken({
+          code: oAuthCode,
+          state: oAuthState,
+        });
+        userAccessKit = await app().oauth.getUserOctokit({
+          token: token.authentication.token,
+        });
+      } catch (e) {
+        console.error(
+          `could not verify user using oAuthCode and oAuthState`,
+          e
+        );
+        return NextResponse.json(
+          { error: new RmkFwEditorError(RmkEditorErrorCode.AUTH_ERROR) },
+          { status: 422 }
+        );
+      }
+    }
+
     // flow when user access tokens are present in the cookies
-    if (userAccessToken) {
+    if (userAccessToken && !userAccessKit) {
       try {
         userAccessKit = await app().oauth.getUserOctokit({
           token: userAccessToken.value,
@@ -91,28 +113,6 @@ export async function GET(request: NextRequest) {
           e
         );
         return NextResponse.redirect(getUserAuthUrl());
-      }
-    }
-
-    if (oAuthCode && oAuthState) {
-      // user is authenticated successfully
-      try {
-        const token = await createUserAccessToken({
-          code: oAuthCode,
-          state: oAuthState,
-        });
-        userAccessKit = await app().oauth.getUserOctokit({
-          token: token.authentication.token,
-        });
-      } catch (e) {
-        console.error(
-          `could not verify user using oAuthCode and oAuthState`,
-          e
-        );
-        return NextResponse.json(
-          { error: new RmkFwEditorError(RmkEditorErrorCode.AUTH_ERROR) },
-          { status: 422 }
-        );
       }
     }
 

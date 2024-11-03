@@ -12,14 +12,14 @@ export interface IKeyboardTomlConfig {
   };
   layout: {
     keymap: string[][][];
+    cols: number;
+    rows: number;
+    layers: number;
   };
   light: Record<string, unknown>; // Empty object, flexible for future additions
-  matrix: {
-    cols: number;
+  matrix?: {
     input_pins: string[];
-    layers: number;
     output_pins: string[];
-    rows: number;
   };
   split: {
     connection: string;

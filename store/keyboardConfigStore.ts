@@ -1,44 +1,30 @@
-import { IKeyboardTomlConfig } from '@/interfaces/IKeyboardConfig';
 import { IRmkConfig } from '@/interfaces/IRmkConfig';
-import { IVialJSONConfig } from '@/interfaces/IVialConfig';
 import { allRmkKeyboardConfigs } from '@/lib/config/allKeyboards';
 import { create } from 'zustand';
 
-interface IKeyboardConfigStore {
-  allConfigs: string[];
+interface IKeyboardConfigStore extends IRmkConfig {
+  allPredefinedConfigs: string[];
   configKey: string;
-  toml?: IKeyboardTomlConfig;
-  vial?: IVialJSONConfig;
-  updateExistingConfig: ({
-    toml,
-    vial,
-    configKey,
-  }: {
-    toml?: IKeyboardTomlConfig;
-    vial?: IVialJSONConfig;
-    configKey?: string;
-  }) => void;
+  updateExistingConfig: (data: Partial<IKeyboardConfigStore>) => void;
+  getSanitizedConfigData: () => IRmkConfig;
 }
 
-export const useKeyboardConfigStore = create<IKeyboardConfigStore>()((set) => ({
-  allConfigs: [...Object.keys(allRmkKeyboardConfigs), 'user'],
-  configKey: 'user',
-  toml: undefined,
-  vial: undefined,
-  updateExistingConfig: ({
-    toml,
-    vial,
-    configKey,
-  }: {
-    toml?: IKeyboardTomlConfig;
-    vial?: IVialJSONConfig;
-    configKey?: string;
-  }) =>
-    set((state) => {
+export const useKeyboardConfigStore = create<IKeyboardConfigStore>()(
+  (set, get) => ({
+    allPredefinedConfigs: [...Object.keys(allRmkKeyboardConfigs), 'user'],
+    configKey: 'user',
+    updateExistingConfig: (data: Partial<IKeyboardConfigStore>) =>
+      set(() => ({ ...data })),
+    getSanitizedConfigData: (): IRmkConfig => {
       return {
-        toml: toml || state.toml,
-        vial: vial || state.vial,
-        configKey: configKey || state.configKey,
+        keyboardToml: get().keyboardToml,
+        vialJson: get().vialJson,
+        keyboard_type: get().keyboard_type,
+        microcontroller_family: get().microcontroller_family,
+        split_microcontroller: get().split_microcontroller,
+        connection: get().connection,
+        target: get().target,
       };
-    }),
-}));
+    },
+  })
+);
