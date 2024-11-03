@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import { IApiResponse } from "../../../../../interfaces/IApiResponse";
-import { getAccessibleRepositories } from "../../../../../lib/github/repository";
-import { getAccessTokenFromCookie } from "../../../../../utils/functions";
+import { NextResponse } from 'next/server';
+import { IApiResponse } from '../../../../../interfaces/IApiResponse';
+import { getAccessibleRepositories } from '../../../../../lib/github/repository';
+import { getAccessTokenFromCookie } from '../../../../../utils/functions';
 
 // GET handler with pagination support
 export async function GET(): Promise<
@@ -13,13 +13,13 @@ export async function GET(): Promise<
     const repos = await getAccessibleRepositories(accessToken);
     return NextResponse.json({ data: repos }, { status: 200 });
   } catch (error) {
-    console.error("Error in repositories route:", error);
+    console.error('Error in repositories route:', error);
     return NextResponse.json(
       {
-        error: "Failed to fetch repositories",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Failed to fetch repositories',
+        message: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

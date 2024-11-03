@@ -1,11 +1,16 @@
-import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
-import { CookieKey, RmkEditorErrorCode } from "../../../utils/enums";
-import { createUserAccessToken, getInstallationTokenByInstallationId, getInstallationTokenByKit, getUserAuthUrl } from "../../../lib/github/auth";
-import { getAppInstallationUrl, getAppURL } from "../../../lib/app/url";
-import RmkFwEditorError from "../../../lib/error";
-import { app } from "../../../lib/github/client";
-import { setTokensCookies } from "../../../utils/functions";
+import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
+import { CookieKey, RmkEditorErrorCode } from '../../../utils/enums';
+import {
+  createUserAccessToken,
+  getInstallationTokenByInstallationId,
+  getInstallationTokenByKit,
+  getUserAuthUrl,
+} from '../../../lib/github/auth';
+import { getAppInstallationUrl, getAppURL } from '../../../lib/app/url';
+import RmkFwEditorError from '../../../lib/error';
+import { app } from '../../../lib/github/client';
+import { setTokensCookies } from '../../../utils/functions';
 
 export async function GET(request: NextRequest) {
   const oAuthCode = request.nextUrl.searchParams.get('code');
@@ -15,7 +20,9 @@ export async function GET(request: NextRequest) {
   // const setupAction = request.nextUrl.searchParams.get('setup_action');
 
   const cookieStore = await cookies();
-  const installationToken = cookieStore.get(CookieKey.GITHUB_INSTALLATION_TOKEN);
+  const installationToken = cookieStore.get(
+    CookieKey.GITHUB_INSTALLATION_TOKEN
+  );
   const userAccessToken = cookieStore.get(CookieKey.GITHUB_USER_ACCESS_TOKEN);
   const userRefreshToken = cookieStore.get(CookieKey.GITHUB_USER_REFRESH_TOKEN);
 
@@ -34,30 +41,55 @@ export async function GET(request: NextRequest) {
   if (installationId) {
     // app is installed successfully
     try {
-      installationKit = await getInstallationTokenByInstallationId({ installationId: parseInt(installationId) })
+      installationKit = await getInstallationTokenByInstallationId({
+        installationId: parseInt(installationId),
+      });
     } catch (e) {
-      console.error(`Could not get installation token even after app installation`, e);
-      return NextResponse.json({ error: new RmkFwEditorError(RmkEditorErrorCode.AUTH_ERROR) }, { status: 422 });
+      console.error(
+        `Could not get installation token even after app installation`,
+        e
+      );
+      return NextResponse.json(
+        { error: new RmkFwEditorError(RmkEditorErrorCode.AUTH_ERROR) },
+        { status: 422 }
+      );
     }
   } else if (userRefreshToken || userAccessToken || oAuthCode) {
     let userAccessKit;
     // flow when user access tokens are present in the cookies
     if (userAccessToken) {
       try {
-        userAccessKit = await app().oauth.getUserOctokit({ 'token': userAccessToken.value });
+        userAccessKit = await app().oauth.getUserOctokit({
+          token: userAccessToken.value,
+        });
       } catch (e) {
-        console.error(`Failed to get user access kit using user access token may retry with refresh token`, e);
+        console.error(
+          `Failed to get user access kit using user access token may retry with refresh token`,
+          e
+        );
         return NextResponse.redirect(getUserAuthUrl());
       }
     }
 
     if (userRefreshToken && !userAccessKit) {
       try {
-        const refreshToken = await app().oauth.refreshToken({ 'refreshToken': userRefreshToken.value });
-        await setTokensCookies({ accessToken: { token: refreshToken.authentication.token, expires: refreshToken.authentication.expiresAt } });
-        userAccessKit = await app().oauth.getUserOctokit({ 'token': refreshToken.authentication.token });
+        const refreshToken = await app().oauth.refreshToken({
+          refreshToken: userRefreshToken.value,
+        });
+        await setTokensCookies({
+          accessToken: {
+            token: refreshToken.authentication.token,
+            expires: refreshToken.authentication.expiresAt,
+          },
+        });
+        userAccessKit = await app().oauth.getUserOctokit({
+          token: refreshToken.authentication.token,
+        });
       } catch (e) {
-        console.info(`Failed to get user access kit using refresh token. trying to reauthorize`, e);
+        console.info(
+          `Failed to get user access kit using refresh token. trying to reauthorize`,
+          e
+        );
         return NextResponse.redirect(getUserAuthUrl());
       }
     }
@@ -65,11 +97,22 @@ export async function GET(request: NextRequest) {
     if (oAuthCode && oAuthState) {
       // user is authenticated successfully
       try {
-        const token = await createUserAccessToken({ code: oAuthCode, state: oAuthState })
-        userAccessKit = await app().oauth.getUserOctokit({ token: token.authentication.token });
+        const token = await createUserAccessToken({
+          code: oAuthCode,
+          state: oAuthState,
+        });
+        userAccessKit = await app().oauth.getUserOctokit({
+          token: token.authentication.token,
+        });
       } catch (e) {
-        console.error(`could not verify user using oAuthCode and oAuthState`, e)
-        return NextResponse.json({ error: new RmkFwEditorError(RmkEditorErrorCode.AUTH_ERROR) }, { status: 422 });
+        console.error(
+          `could not verify user using oAuthCode and oAuthState`,
+          e
+        );
+        return NextResponse.json(
+          { error: new RmkFwEditorError(RmkEditorErrorCode.AUTH_ERROR) },
+          { status: 422 }
+        );
       }
     }
 
@@ -77,7 +120,10 @@ export async function GET(request: NextRequest) {
       try {
         installationKit = await getInstallationTokenByKit(userAccessKit);
       } catch (e) {
-        console.info(`Failed to fetch installation kit looks like the app is not installed redirecting to install the app`, e)
+        console.info(
+          `Failed to fetch installation kit looks like the app is not installed redirecting to install the app`,
+          e
+        );
         return NextResponse.redirect(await getAppInstallationUrl());
       }
     }
@@ -91,5 +137,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(getAppURL());
   }
 }
-
-

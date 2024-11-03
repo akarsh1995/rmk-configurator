@@ -1,4 +1,4 @@
-import { RmkEditorErrorCode } from "../utils/enums";
+import { RmkEditorErrorCode } from '../utils/enums';
 
 class RmkFwEditorError extends Error {
   code: RmkEditorErrorCode;
@@ -13,7 +13,6 @@ class RmkFwEditorError extends Error {
 
     Object.setPrototypeOf(this, RmkFwEditorError.prototype);
   }
-
 }
 
 export default RmkFwEditorError;

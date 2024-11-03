@@ -1,7 +1,19 @@
-import { Octokit } from "octokit";
-import { RmkFilePaths } from "../../utils/enums";
+import { Octokit } from 'octokit';
+import { RmkFilePaths } from '../../utils/enums';
 
-async function getFileContent({ owner, repo, path, ref = 'main', authToken }: { owner: string; repo: string; path: string; ref: string; authToken: string; }) {
+async function getFileContent({
+  owner,
+  repo,
+  path,
+  ref = 'main',
+  authToken,
+}: {
+  owner: string;
+  repo: string;
+  path: string;
+  ref: string;
+  authToken: string;
+}) {
   const octokit = new Octokit({ auth: authToken });
 
   try {
@@ -26,7 +38,6 @@ async function getFileContent({ owner, repo, path, ref = 'main', authToken }: { 
   }
 }
 
-
 export async function getAccessibleRepositories(authToken: string) {
   try {
     const octo = new Octokit({ auth: authToken });
@@ -34,25 +45,55 @@ export async function getAccessibleRepositories(authToken: string) {
       per_page: 100, // max per page
     });
 
-    return data.repositories.map(repo => ({ name: repo.name, owner: repo.owner.login }));
+    return data.repositories.map((repo) => ({
+      name: repo.name,
+      owner: repo.owner.login,
+    }));
   } catch (error) {
     console.error('Error fetching accessible repositories:', error);
     return [];
   }
 }
 
-export async function getKeyboardToml({ owner, repo, ref = 'main', authToken }: { owner: string; repo: string; ref: string; authToken: string; }) {
+export async function getKeyboardToml({
+  owner,
+  repo,
+  ref = 'main',
+  authToken,
+}: {
+  owner: string;
+  repo: string;
+  ref: string;
+  authToken: string;
+}) {
   return getFileContent({
-    owner, repo, path: 'keyboard.toml', ref, authToken
-  })
+    owner,
+    repo,
+    path: 'keyboard.toml',
+    ref,
+    authToken,
+  });
 }
 
-export async function getVialJson({ owner, repo, ref = 'main', authToken }: { owner: string; repo: string; ref: string; authToken: string; }) {
+export async function getVialJson({
+  owner,
+  repo,
+  ref = 'main',
+  authToken,
+}: {
+  owner: string;
+  repo: string;
+  ref: string;
+  authToken: string;
+}) {
   return getFileContent({
-    owner, repo, path: 'vial.json', ref, authToken
-  })
+    owner,
+    repo,
+    path: 'vial.json',
+    ref,
+    authToken,
+  });
 }
-
 
 export async function commitMultipleFilesToRepo({
   owner,
@@ -88,18 +129,32 @@ export async function commitMultipleFilesToRepo({
 
     // Step 3: Create blobs for each file
     const blobs = await Promise.all(
-      files.map(async (file): Promise<{ path: string; mode: "100644" | "100755" | "040000" | "160000" | "120000"; type: "blob" | "tree" | "commit"; sha: string; }> => {
-        const { data: blobData } = await octokit.request(
-          'POST /repos/{owner}/{repo}/git/blobs',
-          {
-            owner,
-            repo,
-            content: Buffer.from(file.content).toString('base64'),
-            encoding: 'base64',
-          }
-        );
-        return { path: file.path, mode: '100644', type: 'blob', sha: blobData.sha };
-      })
+      files.map(
+        async (
+          file
+        ): Promise<{
+          path: string;
+          mode: '100644' | '100755' | '040000' | '160000' | '120000';
+          type: 'blob' | 'tree' | 'commit';
+          sha: string;
+        }> => {
+          const { data: blobData } = await octokit.request(
+            'POST /repos/{owner}/{repo}/git/blobs',
+            {
+              owner,
+              repo,
+              content: Buffer.from(file.content).toString('base64'),
+              encoding: 'base64',
+            }
+          );
+          return {
+            path: file.path,
+            mode: '100644',
+            type: 'blob',
+            sha: blobData.sha,
+          };
+        }
+      )
     );
 
     // Step 4: Create a new tree with all blobs
@@ -120,12 +175,15 @@ export async function commitMultipleFilesToRepo({
     );
 
     // Step 6: Update the branch reference to point to the new commit
-    await octokit.request('PATCH /repos/{owner}/{repo}/git/refs/heads/{branch}', {
-      owner,
-      repo,
-      branch,
-      sha: newCommit.sha,
-    });
+    await octokit.request(
+      'PATCH /repos/{owner}/{repo}/git/refs/heads/{branch}',
+      {
+        owner,
+        repo,
+        branch,
+        sha: newCommit.sha,
+      }
+    );
 
     console.log('Commit created successfully:', newCommit.sha);
   } catch (error) {

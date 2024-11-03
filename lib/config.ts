@@ -220,7 +220,6 @@ output_pins = ["P1_11", "P1_13", "P1_15", "P0_02", "P0_29", "P0_31"]
 [split]
 connection = "ble"`;
 
-
 export const corneVialJson = `{
   "name": "HID Keyboard",
   "vendorId": "0x4C4B",
@@ -285,4 +284,4 @@ export const corneVialJson = `{
     ]
   }
 }
-` 
+`;
